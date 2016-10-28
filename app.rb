@@ -16,6 +16,7 @@ def get_user_local_bot_reply(word)
 end
 
 get '/' do
+    puts ENV["USR_LOCAL_API_KEY"]
     "OK"
 end
 
