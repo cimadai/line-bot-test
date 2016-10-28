@@ -26,6 +26,7 @@ def get_user_local_bot_reply(word)
 end
 
 def sendToChatwork(message)
+    puts "send chatwork. { #{message} }"
     response = chatwork.post do |request|
       request.url "/v1/rooms/#{ENV["CHATWORK_ROOMID"]}/messages"
       request.headers = {
@@ -45,6 +46,7 @@ post '/callback' do
     body = request.body.read
 
     signature = request.env['HTTP_X_LINE_SIGNATURE']
+    puts "signature = { #{signature} }"
     unless client.validate_signature(body, signature)
         error 400 do 'Bad Request' end
     end
@@ -56,13 +58,14 @@ post '/callback' do
         when Line::Bot::Event::Message
             case event.type
             when Line::Bot::Event::MessageType::Text
+                puts "callback message."
                 message = {
                     type: 'text',
                     text: event.message['text']
                 }
-                puts "callback message."
                 client.reply_message(event['replyToken'], message)
             when Line::Bot::Event::Beacon
+                puts "callback beacon."
                 message = {
                     type: 'text',
                     text: 'わんわん！'
