@@ -9,7 +9,9 @@ def client
         config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
         config.channel_token = ENV["LINE_CHANNEL_TOKEN"]
     }
+end
 
+def chatwork
     @chatwork = Faraday::Connection.new(url: 'https://api.chatwork.com') do |builder|
       builder.use Faraday::Request::UrlEncoded
       builder.use Faraday::Response::Logger
