@@ -62,7 +62,7 @@ post '/callback' do
                 puts "callback message."
                 message = {
                     type: 'text',
-                    text: event.message['text']
+                    text: get_user_local_bot_reply(event.message['text'])
                 }
                 puts "reply message."
                 client.reply_message(event['replyToken'], message)
