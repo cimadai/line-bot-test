@@ -2,12 +2,19 @@ require 'sinatra'
 require 'line/bot'
 require 'rest-client'
 require 'pp'
+require 'faraday'
 
 def client
     @client ||= Line::Bot::Client.new { |config|
         config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
         config.channel_token = ENV["LINE_CHANNEL_TOKEN"]
     }
+
+    @chatwork = Faraday::Connection.new(url: 'https://api.chatwork.com') do |builder|
+      builder.use Faraday::Request::UrlEncoded
+      builder.use Faraday::Response::Logger
+      builder.use Faraday::Adapter::NetHttp
+    end
 end
 
 def get_user_local_bot_reply(word)
@@ -17,7 +24,13 @@ def get_user_local_bot_reply(word)
 end
 
 get '/' do
-    puts ENV["USR_LOCAL_API_KEY"]
+    response = @chatwork.post do |request|
+      request.url "/v1/rooms/#{ENV["CHATWORK_ROOMID"]}/messages"
+      request.headers = {
+        'X-ChatWorkToken' => ENV["CHATWORK_TOKEN"]
+      }
+      request.params[:body] = "Hello World!" # => ここに入れる文字が投稿される
+    end
     "OK"
 end
 
@@ -30,7 +43,6 @@ post '/callback' do
         error 400 do 'Bad Request' end
     end
 
-    puts ENV["USR_LOCAL_API_KEY"]
     events = client.parse_events_from(body)
     events.each { |event|
         pp event
@@ -43,6 +55,12 @@ post '/callback' do
                     text: event.message['text']
                 }
                 puts "callback message."
+                client.reply_message(event['replyToken'], message)
+            when Line::Bot::Event::Beacon
+                message = {
+                    type: 'text',
+                    text: 'おかえり！'
+                }
                 client.reply_message(event['replyToken'], message)
             when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
                 response = client.get_message_content(event.message['id'])
