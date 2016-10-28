@@ -64,6 +64,7 @@ post '/callback' do
                     type: 'text',
                     text: event.message['text']
                 }
+                puts "reply message."
                 client.reply_message(event['replyToken'], message)
             when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
                 response = client.get_message_content(event.message['id'])
@@ -74,9 +75,10 @@ post '/callback' do
             puts "callback beacon."
             message = {
                 type: 'text',
-                text: 'わんわん！'
+                text: ENV["BEACON_MESSAGE"]
             }
-            sendToChatwork("わんわん！")
+            sendToChatwork(ENV["BEACON_MESSAGE"])
+            puts "reply message."
             client.reply_message(event['replyToken'], message)
         end
     }
