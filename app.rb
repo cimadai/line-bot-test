@@ -25,14 +25,18 @@ def get_user_local_bot_reply(word)
     response_json['status'] == "success" ? response_json['result'] : '通信エラー'
 end
 
-get '/' do
+def sendToChatwork(message)
     response = chatwork.post do |request|
       request.url "/v1/rooms/#{ENV["CHATWORK_ROOMID"]}/messages"
       request.headers = {
         'X-ChatWorkToken' => ENV["CHATWORK_TOKEN"]
       }
-      request.params[:body] = "Hello World!" # => ここに入れる文字が投稿される
+      request.params[:body] = message
     end
+end
+
+get '/' do
+    sendToChatwork("OK")
     "OK"
 end
 
@@ -61,8 +65,9 @@ post '/callback' do
             when Line::Bot::Event::Beacon
                 message = {
                     type: 'text',
-                    text: 'おかえり！'
+                    text: 'わんわん！'
                 }
+                sendToChatwork("わんわん！")
                 client.reply_message(event['replyToken'], message)
             when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
                 response = client.get_message_content(event.message['id'])
