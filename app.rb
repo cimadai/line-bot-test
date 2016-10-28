@@ -24,7 +24,7 @@ def get_user_local_bot_reply(word)
 end
 
 get '/' do
-    response = @chatwork.post do |request|
+    response = chatwork.post do |request|
       request.url "/v1/rooms/#{ENV["CHATWORK_ROOMID"]}/messages"
       request.headers = {
         'X-ChatWorkToken' => ENV["CHATWORK_TOKEN"]
