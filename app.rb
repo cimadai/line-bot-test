@@ -65,7 +65,7 @@ post '/callback' do
                     text: event.message['text']
                 }
                 client.reply_message(event['replyToken'], message)
-            when Line::Bot::Event::Beacon
+            when Line::Bot::Event::MessageType::Beacon
                 puts "callback beacon."
                 message = {
                     type: 'text',
