@@ -65,19 +65,19 @@ post '/callback' do
                     text: event.message['text']
                 }
                 client.reply_message(event['replyToken'], message)
-            when Line::Bot::Event::MessageType::Beacon
-                puts "callback beacon."
-                message = {
-                    type: 'text',
-                    text: 'わんわん！'
-                }
-                sendToChatwork("わんわん！")
-                client.reply_message(event['replyToken'], message)
             when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
                 response = client.get_message_content(event.message['id'])
                 tf = Tempfile.open("content")
                 tf.write(response.body)
             end
+        when Line::Bot::Event::Beacon
+            puts "callback beacon."
+            message = {
+                type: 'text',
+                text: 'わんわん！'
+            }
+            sendToChatwork("わんわん！")
+            client.reply_message(event['replyToken'], message)
         end
     }
 
