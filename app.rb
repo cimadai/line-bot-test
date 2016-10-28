@@ -15,6 +15,11 @@ def get_user_local_bot_reply(word)
   response_json['status'] == "success" ? response_json['result'] : '通信エラー'
 end
 
+get '/' do
+    "OK"
+end
+
+
 post '/callback' do
   body = request.body.read
 
