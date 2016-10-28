@@ -1,33 +1,46 @@
-# Mostly taken from http://qiita.com/masuidrive/items/1042d93740a7a72242a3
-
-require 'sinatra/base'
-require 'json'
+require 'sinatra'
+require 'line/bot'
 require 'rest-client'
 
-class App < Sinatra::Base
-    post '/linebot/callback' do
-        params = JSON.parse(request.body.read)
+def client
+  @client ||= Line::Bot::Client.new { |config|
+    config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
+    config.channel_token = ENV["LINE_CHANNEL_TOKEN"]
+  }
+end
 
-        params['result'].each do |msg|
-            request_content = {
-                to: [msg['content']['from']],
-                toChannel: 1383378250, # Fixed  value
-                eventType: "138311608800106203", # Fixed value
-                content: msg['content']
-            }
+def get_user_local_bot_reply(word)
+  response = RestClient.get 'https://chatbot-api.userlocal.jp/api/chat', { params: { key: ENV['USR_LOCAL_API_KEY'], message: CGI.escape(word) } }
+  response_json = JSON.parse(response)
+  response_json['status'] == "success" ? response_json['result'] : '通信エラー'
+end
 
-            endpoint_uri = 'https://trialbot-api.line.me/v1/events'
-            content_json = request_content.to_json
+post '/callback' do
+  body = request.body.read
 
-            RestClient.proxy = ENV['FIXIE_URL'] if ENV['FIXIE_URL']
-            RestClient.post(endpoint_uri, content_json, {
-                'Content-Type' => 'application/json; charset=UTF-8',
-                'X-Line-ChannelID' => ENV["LINE_CHANNEL_ID"],
-                'X-Line-ChannelSecret' => ENV["LINE_CHANNEL_SECRET"],
-                'X-Line-Trusted-User-With-ACL' => ENV["LINE_CHANNEL_MID"],
-            })
-        end
+  signature = request.env['HTTP_X_LINE_SIGNATURE']
+  unless client.validate_signature(body, signature)
+    error 400 do 'Bad Request' end
+  end
 
-        "OK"
+  events = client.parse_events_from(body)
+  events.each { |event|
+    case event
+    when Line::Bot::Event::Message
+      case event.type
+      when Line::Bot::Event::MessageType::Text
+        message = {
+          type: 'text',
+          text: get_user_local_bot_reply(event.message['text'])
+        }
+        client.reply_message(event['replyToken'], message)
+      when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
+        response = client.get_message_content(event.message['id'])
+        tf = Tempfile.open("content")
+        tf.write(response.body)
+      end
     end
+  }
+
+  "OK"
 end
